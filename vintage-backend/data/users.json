@@ -1,0 +1,26 @@
+{
+  "cooluser321@gmail.com": {
+    "id": "1771013506734",
+    "email": "cooluser321@gmail.com",
+    "username": "poop",
+    "password": "$2b$10$KntuSheYD3CDt9OtLPL/pOO0EfInAt34.IIq3BCMBudC75atu0Ohu",
+    "spotifyConnected": false,
+    "currentRoomId": "1771013516850"
+  },
+  "poo@gmail.com": {
+    "id": "1771014128059",
+    "email": "poo@gmail.com",
+    "username": "poo@gmail.com",
+    "password": "$2b$10$rnIHWReabSZzJcHIOlyes.H/yLZobrTTvYuuWYR78Zi640aKnOCxu",
+    "spotifyConnected": false,
+    "currentRoomId": "1771014166689"
+  },
+  "cooluser123@gmail.com": {
+    "id": "1771014728628",
+    "email": "cooluser123@gmail.com",
+    "username": "cooluser123@gmail.co",
+    "password": "$2b$10$KuP0MM4FiUYz9A1pdGqCBO9SRntTHrzP99RUUg50MYPaAE.RvPVpK",
+    "spotifyConnected": false,
+    "currentRoomId": "1771014732464"
+  }
+}

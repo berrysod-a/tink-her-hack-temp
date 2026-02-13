@@ -1,0 +1,34 @@
+{
+  "1771013516850": {
+    "id": "1771013516850",
+    "inviteCode": "YKIMY8",
+    "createdBy": "1771013506734",
+    "partnerId": null,
+    "isActive": true,
+    "createdAt": "2026-02-13T20:11:56.850Z"
+  },
+  "1771014138102": {
+    "id": "1771014138102",
+    "inviteCode": "HSN0PA",
+    "createdBy": "1771014128059",
+    "partnerId": null,
+    "isActive": true,
+    "createdAt": "2026-02-13T20:22:18.102Z"
+  },
+  "1771014166689": {
+    "id": "1771014166689",
+    "inviteCode": "8ME6UG",
+    "createdBy": "1771014128059",
+    "partnerId": null,
+    "isActive": true,
+    "createdAt": "2026-02-13T20:22:46.689Z"
+  },
+  "1771014732464": {
+    "id": "1771014732464",
+    "inviteCode": "XDN96K",
+    "createdBy": "1771014728628",
+    "partnerId": null,
+    "isActive": true,
+    "createdAt": "2026-02-13T20:32:12.464Z"
+  }
+}
