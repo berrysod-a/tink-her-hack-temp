@@ -13,7 +13,7 @@
 - Member 2: Theresa Antony - Christ College of Engineering, Irinjalakkuda
 
 ### Hosted Project Link
-https://monroecce.vercel.app/login
+https://monroecce.vercel.app/
 
 ### Hosted Project Demo Video
 https://drive.google.com/file/d/1dWOZ11rn2EFGBGT9EOeawj3AQC4A63YL/view?usp=drivesdk
