@@ -13,7 +13,10 @@
 - Member 2: Theresa Antony - Christ College of Engineering, Irinjalakkuda
 
 ### Hosted Project Link
-[mention your project hosted link here]
+https://monroecce.vercel.app/login
+
+### Hosted Project Demo Video
+https://drive.google.com/file/d/1dWOZ11rn2EFGBGT9EOeawj3AQC4A63YL/view?usp=drivesdk
 
 ### Project Description
 is a real-time virtual hangout platform where paired users can listen to music, play games, and watch videos together in perfect sync. Using WebSocket technology and a vintage vinyl aesthetic, it creates an intimate shared space for long-distance friends to connect through synchronized activities.
