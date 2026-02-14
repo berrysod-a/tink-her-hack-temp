@@ -21,7 +21,7 @@ const MoviesZone = () => {
     useEffect(() => {
         if (!user) return;
 
-        socketRef.current = io('http://localhost:3000');
+        socketRef.current = io(import.meta.env.VITE_BACKED_URL);
         socketRef.current.emit('join-room', { roomId: user.currentRoomId, userId: user.id });
 
         socketRef.current.on('video-action-received', ({ action, timestamp, videoId: vid }) => {
@@ -74,7 +74,7 @@ const MoviesZone = () => {
             socketRef.current.emit('video-action', { roomId: user.currentRoomId, action: 'load', videoId: id, timestamp: 0 });
 
             // Log to Memory Lane
-            fetch('http://localhost:3000/api/history/log', {
+            fetch(`${import.meta.env.VITE_BACKED_URL}/api/history/log`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

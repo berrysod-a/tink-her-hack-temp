@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
 
     const verifyToken = async () => {
         try {
-            const res = await fetch('http://localhost:3000/api/auth/verify', {
+            const res = await fetch(`${import.meta.env.VITE_BACKED_URL}/api/auth/verify`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();
@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const signup = async (email, password, username) => {
-        const res = await fetch('http://localhost:3000/api/auth/signup', {
+        const res = await fetch(`${import.meta.env.VITE_BACKED_URL}/api/auth/signup`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password, username })
@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const login = async (email, password) => {
-        const res = await fetch('http://localhost:3000/api/auth/login', {
+        const res = await fetch(`${import.meta.env.VITE_BACKED_URL}/api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })

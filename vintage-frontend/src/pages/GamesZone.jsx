@@ -17,7 +17,7 @@ const GamesZone = () => {
     // Initialize socket
     useEffect(() => {
         if (!user) return;
-        const newSocket = io('http://localhost:3000');
+        const newSocket = io(import.meta.env.VITE_BACKED_URL);
         setSocket(newSocket);
 
         newSocket.on('connect', () => {
