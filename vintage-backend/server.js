@@ -50,6 +50,7 @@ const logsData = loadData(LOGS_FILE);
 const users = new Map(Object.entries(usersData));
 const rooms = new Map(Object.entries(roomsData));
 const sessionLogs = new Map(Object.entries(logsData));
+const gameStates = new Map(); // Track Tic-Tac-Toe state per room
 
 const persistAll = () => {
   saveData(USERS_FILE, Object.fromEntries(users));
@@ -276,37 +277,85 @@ app.get('/api/youtube/search', authenticate, async (req, res) => {
   const { q } = req.query;
   if (!q) return res.status(400).json({ success: false, error: 'Query required' });
 
-  try {
-    const response = await fetch(`https://www.youtube.com/results?search_query=${encodeURIComponent(q)}&sp=EgIQAQ%253D%253D`); // sp=EgIQAQ%253D%253D filters for videos
-    const html = await response.text();
+  // List of Invidious instances for fallback
+  const instances = [
+    'https://invidious.flokinet.to',
+    'https://invidious.projectsegfau.lt',
+    'https://iv.ggtyler.dev',
+    'https://inv.nadeko.net'
+  ];
 
-    // Extract ytInitialData from HTML
-    const match = html.match(/var ytInitialData = ({.*?});/);
-    if (!match) return res.status(500).json({ success: false, error: 'Failed to parse YouTube data' });
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.9'
+  };
 
-    const data = JSON.parse(match[1]);
-    const results = [];
-
-    // Navigate the complex YouTube JSON structure safely
-    const contents = data.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents?.[0]?.itemSectionRenderer?.contents;
-
-    if (contents) {
-      for (const item of contents) {
-        if (item.videoRenderer) {
-          const video = item.videoRenderer;
-          results.push({
+  const tryInvidious = async (query) => {
+    for (const instance of instances) {
+      try {
+        console.log(`Trying Invidious instance: ${instance}`);
+        const response = await fetch(`${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video`, { headers, signal: AbortSignal.timeout(5000) });
+        if (!response.ok) continue;
+        const data = await response.json();
+        if (Array.isArray(data) && data.length > 0) {
+          return data.slice(0, 10).map(video => ({
             id: video.videoId,
-            title: video.title?.runs?.[0]?.text,
-            thumbnail: video.thumbnail?.thumbnails?.[0]?.url,
-            author: video.ownerText?.runs?.[0]?.text,
-            duration: video.lengthText?.simpleText
-          });
+            title: video.title,
+            thumbnail: video.videoThumbnails?.[0]?.url || '',
+            author: video.author,
+            duration: video.lengthSeconds ? `${Math.floor(video.lengthSeconds / 60)}:${(video.lengthSeconds % 60).toString().padStart(2, '0')}` : ''
+          }));
         }
-        if (results.length >= 5) break;
+      } catch (err) {
+        console.warn(`Invidious instance ${instance} failed:`, err.message);
+      }
+    }
+    return null;
+  };
+
+  try {
+    // Attempt 1: Direct Scrape (Fragile but fast)
+    console.log(`Searching YouTube for: ${q}`);
+    const response = await fetch(`https://www.youtube.com/results?search_query=${encodeURIComponent(q)}&sp=EgIQAQ%253D%253D`, { headers, signal: AbortSignal.timeout(8000) });
+    const html = await response.text();
+    const match = html.match(/var ytInitialData = ({.*?});/);
+
+    if (match) {
+      const data = JSON.parse(match[1]);
+      const results = [];
+      const contents = data.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents?.[0]?.itemSectionRenderer?.contents;
+
+      if (contents) {
+        for (const item of contents) {
+          if (item.videoRenderer) {
+            const video = item.videoRenderer;
+            results.push({
+              id: video.videoId,
+              title: video.title?.runs?.[0]?.text,
+              thumbnail: video.thumbnail?.thumbnails?.[0]?.url,
+              author: video.ownerText?.runs?.[0]?.text,
+              duration: video.lengthText?.simpleText
+            });
+          }
+          if (results.length >= 10) break;
+        }
+        if (results.length > 0) {
+          console.log(`Found ${results.length} results via scrape`);
+          return res.json({ success: true, results });
+        }
       }
     }
 
-    res.json({ success: true, results });
+    // Attempt 2: Fallback to Invidious
+    console.log('YouTube scrape failed or returned no results, falling back to Invidious...');
+    const invidiousResults = await tryInvidious(q);
+    if (invidiousResults) {
+      console.log(`Found ${invidiousResults.length} results via Invidious`);
+      return res.json({ success: true, results: invidiousResults });
+    }
+
+    res.status(500).json({ success: false, error: 'All search methods failed. Please try a different query.' });
   } catch (error) {
     console.error('YouTube Search Error:', error);
     res.status(500).json({ success: false, error: 'Search failed' });
@@ -339,11 +388,28 @@ app.get('/api/history', authenticate, (req, res) => {
   res.json({ success: true, logs: logs.reverse() }); // Newest first
 });
 
+// DEBUG ENDPOINTS (Temporary)
+app.get('/debug/users', (req, res) => {
+  const userList = Array.from(users.values()).map(u => ({
+    id: u.id,
+    username: u.username,
+    email: u.email,
+    currentRoomId: u.currentRoomId
+  }));
+  res.json(userList);
+});
+
+app.get('/debug/rooms', (req, res) => {
+  const roomList = Array.from(rooms.values());
+  res.json(roomList);
+});
+
 // SOCKET.IO
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
   socket.on('join-room', ({ roomId, userId }) => {
+    console.log(`👤 User ${userId} joining room ${roomId} (Socket: ${socket.id})`);
     socket.join(roomId);
     // Also join a personal room for direct messages/notifications
     if (userId) {
@@ -352,77 +418,94 @@ io.on('connection', (socket) => {
     }
     socket.roomId = roomId;
 
-    console.log(`Socket ${socket.id} joined room ${roomId}`);
+    // Initialize game for this room if not exists
+    if (!gameStates.has(roomId)) {
+      gameStates.set(roomId, {
+        players: [],
+        board: Array(9).fill(null),
+        currentTurn: null
+      });
+    }
+
+    const gameState = gameStates.get(roomId);
+    if (!gameState.players.includes(userId)) {
+      gameState.players.push(userId);
+    }
+
+    // Assign symbols and first turn when 2 players are present
+    if (gameState.players.length === 2) {
+      const firstPlayer = gameState.players[0];
+      const secondPlayer = gameState.players[1];
+
+      io.to(`user_${firstPlayer}`).emit('game-init', {
+        firstPlayer: firstPlayer,
+        symbol: 'X'
+      });
+
+      io.to(`user_${secondPlayer}`).emit('game-init', {
+        firstPlayer: firstPlayer,
+        symbol: 'O'
+      });
+
+      gameState.currentTurn = firstPlayer;
+      console.log(`🎮 Game Initialized in room ${roomId}: ${firstPlayer} (X) vs ${secondPlayer} (O)`);
+    }
 
     // Notify others in room
-    socket.to(roomId).emit('partner-connected', { userId });
+    socket.to(roomId).emit('partner-connected', { userId, username: user?.username });
+    console.log(`Socket ${socket.id} joined room ${roomId}`);
   });
 
   socket.on('zone-change', ({ roomId, zone, userId }) => {
-    socket.to(roomId).emit('zone-changed', { zone, userId });
+    console.log(`🚀 Zone Change: User ${userId} moving to ${zone} in room ${roomId}`);
+    socket.to(roomId).emit('navigate-to', { zone });
   });
 
-  socket.on('playback-toggle', ({ roomId, isPlaying, userId }) => {
-    socket.to(roomId).emit('playback-toggled', { isPlaying, userId });
+  socket.on('search-update', ({ roomId, query, results }) => {
+    console.log(`🔍 Search Update in room ${roomId}: ${query}`);
+    socket.to(roomId).emit('search-update', { query, results });
   });
 
-  socket.on('track-change', ({ roomId, track, userId }) => {
-    socket.to(roomId).emit('track-changed', { track, userId });
-  });
-
-  // Phase 4: YouTube Sync Events
-  socket.on('play-song', ({ roomId, videoId, currentTime, userId }) => {
-    socket.to(roomId).emit('play-song', { videoId, currentTime, userId });
-  });
-
-  socket.on('pause-song', ({ roomId, currentTime, userId }) => {
-    socket.to(roomId).emit('pause-song', { currentTime, userId });
-  });
-
-  // SIMPLE MUSIC ZONE SYNC (USER SPEC)
+  // PLAYBACK EVENTS (Supplementary as requested)
   socket.on('play-video', ({ roomId, videoId }) => {
+    console.log(`User playing video: ${videoId} in room: ${roomId}`);
     socket.to(roomId).emit('play-video', { videoId });
   });
 
   socket.on('pause-video', ({ roomId }) => {
+    console.log(`User pausing in room: ${roomId}`);
     socket.to(roomId).emit('pause-video');
   });
 
-  socket.on('add-to-queue', ({ roomId, song }) => {
-    socket.to(roomId).emit('add-to-queue', { song });
+  // TIC-TAC-TOE EVENTS
+  socket.on('make-move', ({ roomId, index, symbol, userId }) => {
+    const gameState = gameStates.get(roomId);
+    if (!gameState || gameState.currentTurn !== userId) return;
+
+    gameState.board[index] = symbol;
+
+    // Switch turn
+    const nextPlayer = gameState.players.find(p => p !== userId);
+    gameState.currentTurn = nextPlayer;
+
+    console.log(`🎮 Move made in room ${roomId} by ${userId} at ${index}`);
+
+    // Broadcast move to both players
+    io.to(roomId).emit('move-made', {
+      index,
+      symbol,
+      nextTurn: nextPlayer
+    });
   });
 
-  // UNIFIED MUSIC SYNC
-  socket.on('play-song', ({ roomId, videoId, currentTime, userId }) => {
-    socket.to(roomId).emit('play-song', { videoId, currentTime, userId });
-  });
-
-  socket.on('pause-song', ({ roomId, currentTime, userId }) => {
-    socket.to(roomId).emit('pause-song', { currentTime, userId });
-  });
-
-  socket.on('add-to-queue', ({ roomId, track, userId }) => {
-    socket.to(roomId).emit('add-to-queue', { track, userId });
-  });
-
-  socket.on('skip-song', ({ roomId, userId }) => {
-    socket.to(roomId).emit('skip-song', { userId });
-  });
-
-  socket.on('remove-from-queue', ({ roomId, index, userId }) => {
-    socket.to(roomId).emit('remove-from-queue', { index, userId });
-  });
-
-  socket.on('make-move', ({ roomId, position, player }) => {
-    socket.to(roomId).emit('move-made', { position, player });
-  });
-
-  socket.on('game-reset', ({ roomId }) => {
-    socket.to(roomId).emit('game-reset');
-  });
-
-  socket.on('video-action', ({ roomId, action, timestamp, videoId }) => {
-    socket.to(roomId).emit('video-action-received', { action, timestamp, videoId });
+  socket.on('reset-game', ({ roomId }) => {
+    const gameState = gameStates.get(roomId);
+    if (gameState) {
+      gameState.board = Array(9).fill(null);
+      gameState.currentTurn = gameState.players[0];
+    }
+    io.to(roomId).emit('game-reset');
+    console.log(`🎮 Game Reset in room ${roomId}`);
   });
 
   socket.on('disconnect', () => {
@@ -431,6 +514,14 @@ io.on('connection', (socket) => {
       socket.to(socket.roomId).emit('partner-disconnected', { userId: socket.userId });
     }
   });
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception thrown:', err);
 });
 
 const PORT = process.env.PORT || 3000;

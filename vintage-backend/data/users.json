@@ -22,5 +22,29 @@
     "password": "$2b$10$KuP0MM4FiUYz9A1pdGqCBO9SRntTHrzP99RUUg50MYPaAE.RvPVpK",
     "spotifyConnected": false,
     "currentRoomId": "1771014732464"
+  },
+  "asdds@asdf": {
+    "id": "1771022924015",
+    "email": "asdds@asdf",
+    "username": "beiluser",
+    "password": "$2b$10$WpvTHJlfKizhW9ORpWRYu.pZqOFAqhyXJpnJ1GRFstioe8mriSKSa",
+    "spotifyConnected": false,
+    "currentRoomId": "1771022930760"
+  },
+  "alice@test.com": {
+    "id": "1771025101198",
+    "email": "alice@test.com",
+    "username": "alice",
+    "password": "$2b$10$Xdk5f0.5pZt/kRISgFNHgOHzNW0IfGmg.VUAqtylF6LiqCi4Iq9.2",
+    "spotifyConnected": false,
+    "currentRoomId": "1771025406143"
+  },
+  "bob@test.com": {
+    "id": "1771025217709",
+    "email": "bob@test.com",
+    "username": "bob",
+    "password": "$2b$10$bGv8tM9HDf5dAb3hAuCqPed57rh63dr/XGV5SfXxAm1cR5YJxQKxa",
+    "spotifyConnected": false,
+    "currentRoomId": "1771025406143"
   }
 }

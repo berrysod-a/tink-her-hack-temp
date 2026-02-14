@@ -46,6 +46,7 @@ export default function Dashboard() {
         socketRef.current = io('http://localhost:3000');
 
         socketRef.current.on('connect', () => {
+            console.log('✅ Socket connected:', socketRef.current.id);
             if (user.currentRoomId) {
                 socketRef.current.emit('join-room', {
                     roomId: user.currentRoomId,
@@ -54,12 +55,31 @@ export default function Dashboard() {
             }
         });
 
+        socketRef.current.on('connect_error', (error) => {
+            console.error('❌ Socket connection error:', error);
+        });
+
+        socketRef.current.on('disconnect', () => {
+            console.log('❌ Socket disconnected');
+        });
+
         socketRef.current.on('partner-joined', (data) => {
+            console.log('👤 Partner joined:', data);
             setRoom(prev => ({
                 ...prev,
                 partner: { id: data.partnerId, username: data.partnerUsername }
             }));
             setView('room');
+        });
+
+        socketRef.current.on('partner-connected', (data) => {
+            console.log('👤 Partner connected:', data);
+            setRoom(prev => ({ ...prev, partnerId: data.userId, partnerUsername: data.username }));
+        });
+
+        socketRef.current.on('navigate-to', ({ zone }) => {
+            console.log('🚀 Navigating to zone:', zone);
+            navigate(zone);
         });
 
         socketRef.current.on('partner-disconnected', () => {
@@ -325,10 +345,10 @@ export default function Dashboard() {
                 {/* Header */}
                 <div className="flex justify-between items-center mb-8">
                     <div className="flex items-center space-x-6">
-                        <div className="w-14 h-14 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center font-black text-2xl shadow-2xl italic tracking-tighter hover:bg-white/10 transition-colors">VH</div>
+                        <div className="w-14 h-14 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center font-black text-2xl shadow-2xl italic tracking-tighter hover:bg-white/10 transition-colors text-purple-400">ME</div>
                         <div>
-                            <h1 className="text-3xl font-black text-white tracking-tighter uppercase italic">Roundabout</h1>
-                            <p className="text-purple-400 text-[10px] font-black uppercase tracking-[0.4em] mt-1 opacity-60">Frequency Sync Active</p>
+                            <h1 className="text-4xl font-black text-white tracking-tighter uppercase italic">Monroe Experience</h1>
+                            <p className="text-purple-300 mt-2 font-bold">Welcome, {user?.username}!</p>
                         </div>
                     </div>
 
