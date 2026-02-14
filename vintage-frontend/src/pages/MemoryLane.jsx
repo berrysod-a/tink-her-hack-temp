@@ -11,7 +11,7 @@ const MemoryLane = () => {
     useEffect(() => {
         const fetchHistory = async () => {
             try {
-                const res = await fetch(`${import.meta.env.VITE_BACKED_URL}/api/history`, {
+                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/history`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
                 });
                 const data = await res.json();

@@ -43,7 +43,7 @@ export default function Dashboard() {
     useEffect(() => {
         if (!user) return;
 
-        socketRef.current = io(VITE_BACKEND_URL);
+        socketRef.current = io(import.meta.env.VITE_BACKEND_URL);
 
         socketRef.current.on('connect', () => {
             console.log('✅ Socket connected:', socketRef.current.id);
@@ -239,7 +239,7 @@ export default function Dashboard() {
         if (!searchQuery.trim()) return;
         setSearching(true);
         try {
-            const res = await fetch(`${import.meta.env.VITE_BACKED_URL}/api/youtube/search?q=${encodeURIComponent(searchQuery)}`, {
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/youtube/search?q=${encodeURIComponent(searchQuery)}`, {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
             });
             const data = await res.json();

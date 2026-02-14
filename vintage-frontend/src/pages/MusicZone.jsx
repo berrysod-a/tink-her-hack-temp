@@ -20,7 +20,7 @@ const MusicZone = () => {
     // Initialize Socket & Listeners
     useEffect(() => {
         if (!user) return;
-        const newSocket = io(import.meta.env.VITE_BACKED_URL);
+        const newSocket = io(import.meta.env.VITE_BACKEND_URL);
         setSocket(newSocket);
 
         newSocket.on('connect', () => {
@@ -166,7 +166,7 @@ const MusicZone = () => {
             console.log('Initiating search for:', searchQuery);
 
             const response = await fetch(
-                `${import.meta.env.VITE_BACKED_URL}/api/youtube/search?q=${encodeURIComponent(searchQuery)}`,
+                `${import.meta.env.VITE_BACKEND_URL}/api/youtube/search?q=${encodeURIComponent(searchQuery)}`,
                 {
                     headers: { 'Authorization': `Bearer ${authToken}` }
                 }

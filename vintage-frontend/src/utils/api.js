@@ -1,4 +1,4 @@
-const API_URL = `${import.meta.env.VITE_BACKED_URL}/api`;
+const API_URL = `${import.meta.env.VITE_BACKEND_URL}/api`;
 
 const getHeaders = () => {
     const token = localStorage.getItem('auth_token');
